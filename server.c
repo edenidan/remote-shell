@@ -5,15 +5,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <fcntl.h> // for open
-#include <unistd.h> // for close
+#include <fcntl.h>
+#include <unistd.h>
 
-#define MAX 80
 #define PORT 8080
-#define SA struct sockaddr
 
-int startShell(int sockfd)
-{
+int startShell(int sockfd) {
 	int stdin_bak = dup(0);
 	int stdout_bak = dup(1);
 	int stderr_bak = dup(2);
@@ -32,58 +29,43 @@ int startShell(int sockfd)
 }
 
 // Driver function
-int main()
-{
+int main() {
 	int sockfd, connfd;
-        socklen_t len;
-	struct sockaddr_in servaddr, cli;
+  socklen_t len;
+	struct sockaddr_in server_addr, client_addr;
 
-	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
-		printf("socket creation failed...\n");
+		printf("error in socket()\n");
 		exit(0);
 	}
-	else
-		printf("Socket successfully created..\n");
-	bzero(&servaddr, sizeof(servaddr));
+	bzero(&server_addr, sizeof(server_addr));
 
-	// assign IP, PORT
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(PORT);
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sin_port = htons(PORT);
 
-	// Binding newly created socket to given IP and verification
-	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
-		printf("socket bind failed...\n");
+	if ((bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr))) != 0) {
+		printf("error in bind()\n");
 		exit(0);
 	}
-	else
-		printf("Socket successfully binded..\n");
 
-	// Now server is ready to listen and verification
 	if ((listen(sockfd, 5)) != 0) {
-		printf("Listen failed...\n");
+		printf("error in listen()\n");
 		exit(0);
 	}
-	else
-		printf("Server listening..\n");
-	len = sizeof(cli);
+	printf("listening...\n");
 
-	// Accept the data packet from client and verification
-	connfd = accept(sockfd, (SA*)&cli, &len);
+	len = sizeof(client_addr);
+
+	connfd = accept(sockfd, (struct sockaddr*)&client_addr, &len);
 	if (connfd < 0) {
-		printf("server acccept failed...\n");
+		printf("error in accept()\n");
 		exit(0);
 	}
-	else
-		printf("server acccept the client...\n");
+	printf("client connected successfully\n");
 
-	// Function for chatting between client and server
-	//func(connfd);
 	startShell(connfd);
 
-	// After chatting close the socket
 	close(sockfd);
 }
-
